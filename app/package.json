@@ -1,0 +1,14 @@
+{
+  "name": "Streamers",
+  "version": "0.1.0",
+  "description": "Streamers application built with Electron",
+  "author": {
+    "name": "Kenneth Pirman",
+    "email": ""
+  },
+  "license": "MIT",
+  "main": "javascripts/main/index.js",
+  "dependencies": {
+
+  }
+}
