@@ -1,50 +1,94 @@
-
+$ = require('jquery');
 
 require('electron').ipcRenderer.on('loaded' , function(event, data) {
-  document.getElementById('title').innerHTML = data.appName + ' App';
-  document.getElementById('details').innerHTML = 'built with Electron v' + data.electronVersion;
-  document.getElementById('versions').innerHTML = 'running on Node v' + data.nodeVersion + ' and Chromium v' + data.chromiumVersion;
+  document.getElementById('title').innerHTML = data.appName;
 
-  const {desktopCapturer} = require('electron')
+  const {desktopCapturer} = require('electron');
 
-  console.log('what is going on here?', desktopCapturer);
-
-  desktopCapturer.getSources({types: ['window', 'screen']}, (error, sources) => {
-    if (error) {
-        console.log(error);
-        throw error
-    }
-    console.log(error, sources);
-    for (let i = 0; i < sources.length; ++i) {
-      if (sources[i].name === 'Screen 1') {
-        navigator.webkitGetUserMedia({
-          audio: true,
-          video: false
-        }, handleStream, handleError)
-        return
-      }
-    }
-  })
+  let streaming = false;
+  let localStream;
 
   function handleStream (stream) {
+      localStream = stream;
+      setAudio(stream);
+      stream.onended = function() {
+          if (streaming) {
+              setAudio();
+              toggle();
+          }
+      };
+  }
+
+  function setAudio(stream) {
       console.log(stream);
-    //   document.querySelector('audio').src = URL.createObjectURL(stream)
+      if (stream) {
+          document.querySelector('audio').src = URL.createObjectURL(stream);
+      } else {
+          document.querySelector('audio').src = '';
+      }
   }
 
   function handleError (e) {
-    console.log(e)
+    console.log('getUserMediaError: ' + JSON.stringify(e, null, '---'));
   }
 
-  var ipc = require("ipc");
-  ipc.on("request", function (req, port) {
-      //console.log(req);
-      var doc = document.implementation.createHTMLDocument(req.url);
-      var h1 = doc.createElement("h1");
-      h1.textContent = "Hello DOM: " + req.url;
-      doc.body.appendChild(h1);
+  function showSources() {
+      desktopCapturer.getSources({types: ['window', 'screen']}, (error, sources) => {
+        if (error) {
+            alert(error);
+            throw error;
+        }
+        for (let source of sources) {
+            addSource(source);
+        }
+      });
+  }
 
-      ipc.send(port, 200, {"content-type": "text/html;charset=UTF-8"},
-               doc.documentElement.outerHTML);
+  function addSource(source) {
+      console.log(source);
+      $('select').append($('<option>', {
+          value: source.id.replace(':', ''),
+          text: source.name
+      }));
+  }
+
+  function onAccessApproved(desktop_id) {
+      if (!desktop_id) {
+          alert('Desktop capture rejected');
+          return;
+      }
+      streaming = true;
+      document.querySelector('button').innerHTML = 'Stop Streaming';
+      console.log('desktop sharing started, id: ', desktop_id);
+      navigator.webkitGetUserMedia({
+        audio: true,
+        video: false
+    }, handleStream, handleError);
+  }
+
+  function toggle() {
+      if (!streaming) {
+          let id = ($('select').val()).replace(/window|screen/g, function(match) { return match + ":"; });
+          console.log('ID THING', id);
+          onAccessApproved(id);
+      } else {
+          streaming = false;
+
+          if (localStream) {
+              localStream.getTracks()[0].stop();
+          }
+          localStream = null;
+
+          document.querySelector('button').innerHTML = 'stream';
+          $('select').empty();
+          showSources();
+      }
+  }
+
+  document.querySelector('button').addEventListener('click', (e) => {
+     toggle();
   });
+
+  showSources();
 
 });

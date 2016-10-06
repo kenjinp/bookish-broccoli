@@ -14,7 +14,7 @@ electron.app.on('ready', function() {
     height: json.settings.height
   });
 
-  window.webContents.openDevTools()
+  window.webContents.openDevTools();
 
   window.loadURL('file://' + path.join(__dirname, '..', '..') + '/index.html');
 
@@ -25,20 +25,6 @@ electron.app.on('ready', function() {
       nodeVersion: process.versions.node,
       chromiumVersion: process.versions.chrome
     });
-    var http = require("http");
-    var crypto = require("crypto");
-    var ipc = require("ipc");
-    var server = http.createServer(function (req, res) {
-        var port = crypto.randomBytes(16).toString("hex");
-        ipc.once(port, function (ev, status, head, body) {
-            //console.log(status, head, body);
-            res.writeHead(status, head);
-            res.end(body);
-        });
-        window.webContents.send("request", req, port);
-    });
-    server.listen(8000);
-    console.log("http://localhost:8000/");
   });
 
   window.on('closed', function() {

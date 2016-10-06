@@ -31,3 +31,12 @@ body {
 .message div {
   margin-bottom: 10px;
 }
+
+select, button {
+    margin: 20px;
+}
+
+select {
+    width: 100%;
+    padding: 10px;
+}
